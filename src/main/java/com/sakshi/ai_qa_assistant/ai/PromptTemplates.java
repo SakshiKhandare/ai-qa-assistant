@@ -76,4 +76,54 @@ public class PromptTemplates {
             
             Return only the JSON array.
             """;
+
+    public static final String TEST_REVIEW_PROMPT = """
+            You are a senior QA automation engineer performing a detailed code review.
+            
+            Review the following test file and provide a comprehensive analysis.
+            
+            Framework: %s
+            Endpoint being tested: %s
+            
+            Test Code:
+            %s
+            
+            Analyze the test file and identify:
+            1. How many test methods exist
+            2. What percentage of important scenarios are covered
+            3. What critical scenarios are missing
+            4. What specific improvements should be made
+            5. What good practices are already present
+            
+            STRICT RULES:
+            1. Return ONLY a single JSON object — no markdown, no explanation, no code blocks
+            2. coverageScore must be a percentage string like "65%%"
+            3. All list fields must be proper JSON arrays of strings
+            4. totalTestsFound must be an integer
+            5. Be specific in missingScenarios — mention field names and exact scenario
+            6. Be encouraging in goodPracticesFound — always find at least one positive
+            
+            Return in this EXACT format:
+            {
+              "totalTestsFound": 5,
+              "coverageScore": "60%%",
+              "overallFeedback": "The test suite covers basic positive and negative cases but lacks security and boundary coverage.",
+              "missingScenarios": [
+                "No SQL injection test for email field",
+                "No test for missing Authorization header",
+                "No boundary test for password minimum length"
+              ],
+              "suggestions": [
+                "Add test with email = 'admin@test.com OR 1=1' to check SQL injection",
+                "Add test with no Authorization header expecting 401",
+                "Add test with password of exactly 7 characters expecting 400"
+              ],
+              "goodPracticesFound": [
+                "Good coverage of empty field scenarios",
+                "Correct use of HTTP status code assertions"
+              ]
+            }
+            
+            Return only the JSON object.
+            """;
 }

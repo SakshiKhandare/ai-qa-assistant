@@ -4,31 +4,36 @@ import com.sakshi.ai_qa_assistant.entity.ApiResponse;
 import com.sakshi.ai_qa_assistant.entity.ApiTestCase;
 import com.sakshi.ai_qa_assistant.entity.ApiTestRequest;
 import com.sakshi.ai_qa_assistant.entity.TestDataRequest;
+import com.sakshi.ai_qa_assistant.entity.TestReviewRequest;
+import com.sakshi.ai_qa_assistant.entity.TestReviewResult;
 import com.sakshi.ai_qa_assistant.service.CodeGeneratorService;
 import com.sakshi.ai_qa_assistant.service.TestCaseService;
 import com.sakshi.ai_qa_assistant.service.TestDataService;
+import com.sakshi.ai_qa_assistant.service.TestReviewerService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/generate")
 public class TestAssistantController {
 
     private final TestCaseService testCaseService;
     private final CodeGeneratorService codeGeneratorService;
     private final TestDataService testDataService;
+    private final TestReviewerService testReviewerService;
 
     public TestAssistantController(TestCaseService testCaseService,
                                    CodeGeneratorService codeGeneratorService,
-                                   TestDataService testDataService) {
+                                   TestDataService testDataService,
+                                   TestReviewerService testReviewerService) {
         this.testCaseService = testCaseService;
         this.codeGeneratorService = codeGeneratorService;
         this.testDataService = testDataService;
+        this.testReviewerService = testReviewerService;
     }
 
-    @PostMapping("/api-tests")
+    @PostMapping("/generate/api-tests")
     public ApiResponse<List<ApiTestCase>> generateApiTests(
             @RequestBody ApiTestRequest request) {
 
@@ -36,7 +41,7 @@ public class TestAssistantController {
         return ApiResponse.success("Test cases generated successfully", testCases);
     }
 
-    @PostMapping("/restassured-tests")
+    @PostMapping("/generate/restassured-tests")
     public ApiResponse<String> generateRestAssuredTests(
             @RequestBody ApiTestRequest request) {
 
@@ -49,11 +54,19 @@ public class TestAssistantController {
         return ApiResponse.success("RestAssured test file generated successfully", result);
     }
 
-    @PostMapping("/test-data")
+    @PostMapping("/generate/test-data")
     public ApiResponse<List<Map<String, Object>>> generateTestData(
             @RequestBody TestDataRequest request) {
 
         List<Map<String, Object>> data = testDataService.generateTestData(request);
         return ApiResponse.success("Test data generated successfully", data);
+    }
+
+    @PostMapping("/review/tests")
+    public ApiResponse<TestReviewResult> reviewTests(
+            @RequestBody TestReviewRequest request) {
+
+        TestReviewResult result = testReviewerService.reviewTests(request);
+        return ApiResponse.success("Test review completed successfully", result);
     }
 }
