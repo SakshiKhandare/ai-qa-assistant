@@ -22,6 +22,13 @@ public class TestCaseService {
 
     public List<ApiTestCase> generateApiTests(ApiTestRequest request) {
 
+        if (request.getEndpoint() == null || request.getEndpoint().isBlank()) {
+            throw new IllegalArgumentException("Endpoint cannot be empty");
+        }
+        if (request.getMethod() == null || request.getMethod().isBlank()) {
+            throw new IllegalArgumentException("Method cannot be empty");
+        }
+
         int maxRetries = 2;
         int attempt = 0;
 

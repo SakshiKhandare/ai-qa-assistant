@@ -1,6 +1,7 @@
 package com.sakshi.ai_qa_assistant.service;
 
 import com.sakshi.ai_qa_assistant.entity.ApiTestCase;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -11,6 +12,9 @@ import java.util.Map;
 @Service
 public class CodeGeneratorService {
 
+    @Value("${test.output.path}")
+    private String testOutputPath;
+
     public String generateRestAssuredTests(String endpoint,
                                            String method,
                                            List<ApiTestCase> testCases) {
@@ -19,6 +23,7 @@ public class CodeGeneratorService {
 
         StringBuilder code = new StringBuilder();
 
+        code.append("package generated;\n\n");
         code.append("import static io.restassured.RestAssured.*;\n");
         code.append("import io.restassured.RestAssured;\n");
         code.append("import io.restassured.http.ContentType;\n");
@@ -41,7 +46,6 @@ public class CodeGeneratorService {
                     .append("() {\n\n");
 
             if (!test.getInput().isEmpty()) {
-
                 code.append(generateMapCode("requestBody", test.getInput(), 2));
             }
 
@@ -54,7 +58,6 @@ public class CodeGeneratorService {
                     .append("            .contentType(ContentType.JSON)\n");
 
             if (!test.getInput().isEmpty()) {
-
                 code.append("            .body(requestBody)\n");
             }
 
@@ -76,7 +79,7 @@ public class CodeGeneratorService {
 
         saveToFile(className, code.toString());
 
-        return "RestAssured test file generated successfully.";
+        return "RestAssured test file generated: " + className + ".java";
     }
 
     private String generateMapCode(String varName,
@@ -84,7 +87,6 @@ public class CodeGeneratorService {
                                    int indentLevel) {
 
         StringBuilder code = new StringBuilder();
-
         String indent = "    ".repeat(indentLevel);
 
         code.append(indent)
@@ -93,7 +95,6 @@ public class CodeGeneratorService {
                 .append(" = Map.of(\n");
 
         int i = 0;
-
         for (Map.Entry<String, Object> entry : map.entrySet()) {
 
             String key = entry.getKey();
@@ -102,36 +103,25 @@ public class CodeGeneratorService {
             code.append(indent).append("    \"").append(key).append("\", ");
 
             if (value instanceof Map) {
-
-                String nestedName = varName + "_" + key;
-
-                code.append(nestedName);
-
+                code.append(varName + "_" + key);
             } else if (value instanceof String) {
-
                 code.append("\"").append(value).append("\"");
-
             } else {
-
                 code.append(value);
             }
 
             if (i < map.size() - 1) {
-
                 code.append(",");
             }
 
             code.append("\n");
-
             i++;
         }
 
         code.append(indent).append(");\n\n");
 
         for (Map.Entry<String, Object> entry : map.entrySet()) {
-
             if (entry.getValue() instanceof Map) {
-
                 code.append(generateMapCode(
                         varName + "_" + entry.getKey(),
                         (Map<String, Object>) entry.getValue(),
@@ -146,32 +136,25 @@ public class CodeGeneratorService {
     private void saveToFile(String className, String code) {
 
         try {
-
-            File folder = new File("src/test/java/generated");
+            File folder = new File(testOutputPath);
 
             if (!folder.exists()) {
-
                 folder.mkdirs();
             }
 
             File file = new File(folder, className + ".java");
-
             FileWriter writer = new FileWriter(file);
-
             writer.write(code);
-
             writer.close();
 
             System.out.println("Test file saved at: " + file.getAbsolutePath());
 
         } catch (Exception e) {
-
             throw new RuntimeException("Failed to write test file", e);
         }
     }
 
     private String formatMethodName(String testName) {
-
         return testName
                 .replaceAll("[^a-zA-Z0-9]", "")
                 .replaceFirst("^[0-9]", "test");
@@ -185,20 +168,16 @@ public class CodeGeneratorService {
                 .trim();
 
         String[] parts = cleaned.split(" ");
-
         StringBuilder className = new StringBuilder();
 
         for (String part : parts) {
-
             if (!part.isEmpty()) {
-
                 className.append(Character.toUpperCase(part.charAt(0)))
                         .append(part.substring(1));
             }
         }
 
         className.append("ApiTests");
-
         return className.toString();
     }
 }

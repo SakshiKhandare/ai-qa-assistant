@@ -30,6 +30,7 @@ public class TestDataService {
 
             String prompt = String.format(
                     PromptTemplates.TEST_DATA_PROMPT,
+                    5,
                     schemaJson
             );
 
