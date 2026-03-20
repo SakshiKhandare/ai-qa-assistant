@@ -1,18 +1,17 @@
 # AI QA Assistant
 
-> An AI-powered productivity tool for QA engineers and SDETs — generates API test cases, test data, RestAssured code, and reviews existing test coverage using NVIDIA's llama3 AI model.
+> An AI-powered productivity tool for QA engineers - generates API test cases, test data, RestAssured code, and reviews existing test coverage using NVIDIA's llama3 AI model.
 
 ![Java](https://img.shields.io/badge/Java-17-orange?style=flat-square&logo=java)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen?style=flat-square&logo=springboot)
 ![NVIDIA AI](https://img.shields.io/badge/NVIDIA-llama3--8b-76b900?style=flat-square&logo=nvidia)
 ![REST API](https://img.shields.io/badge/REST-API-blue?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-purple?style=flat-square)
 
 ---
 
 ## What This Project Does
 
-QA engineers spend hours writing test cases, generating test data, and analyzing failures manually. This tool automates those tasks using AI — giving engineers instant, comprehensive coverage with a single API call.
+We QA engineers spend hours writing test cases, generating test data, and analyzing failures manually. This tool automates those tasks using AI - giving us engineers instant, comprehensive coverage with a single API call.
 
 | Feature | Endpoint | What it does |
 |---|---|---|
@@ -58,6 +57,140 @@ curl -X POST http://localhost:8080/generate/api-tests \
       "expectedResult": { "statusCode": 400, "responseBody": {} }
     }
   ]
+}
+```
+
+---
+
+### Generate Test Data
+```bash
+curl -X POST http://localhost:8080/generate/test-data \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schema": {
+      "name": "string",
+      "email": "string",
+      "age": "number",
+      "password": "string"
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Test data generated successfully",
+  "data": [
+    {
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "age": 28,
+      "password": "SecurePass@123"
+    },
+    {
+      "name": "",
+      "email": "invalidemail",
+      "age": -1,
+      "password": "abc"
+    },
+    {
+      "name": "VeryLongNameThatExceedsMaximumAllowedCharacterLimitForThisField",
+      "email": "boundary@test.com",
+      "age": 0,
+      "password": "1234567"
+    },
+    {
+      "name": "<script>alert('xss')</script>",
+      "email": "xss@test.com",
+      "age": 999,
+      "password": "' OR '1'='1"
+    },
+    {
+      "name": "Jane Smith",
+      "email": "jane.smith@company.org",
+      "age": 35,
+      "password": "ValidPass#456"
+    }
+  ]
+}
+```
+
+---
+
+### Generate RestAssured Code
+```bash
+curl -X POST http://localhost:8080/generate/restassured-tests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endpoint": "/users/register",
+    "method": "POST",
+    "schema": {
+      "name": "string",
+      "email": "string",
+      "password": "string"
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "RestAssured test file generated successfully",
+  "data": "RestAssured test file generated: UsersRegisterApiTests.java"
+}
+```
+
+The generated file is saved to `src/test/java/generated/UsersRegisterApiTests.java` and looks like this:
+
+```java
+package generated;
+
+import static io.restassured.RestAssured.*;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import java.util.Map;
+
+public class UsersRegisterApiTests {
+
+    @BeforeAll
+    public static void setup() {
+        RestAssured.baseURI = "http://localhost:8080";
+    }
+
+    @Test
+    public void ValidRegistration() {
+        Map<String, Object> requestBody = Map.of(
+            "name", "John Doe",
+            "email", "john@example.com",
+            "password", "SecurePass@123"
+        );
+        given()
+            .contentType(ContentType.JSON)
+            .body(requestBody)
+        .when()
+            .post("/users/register")
+        .then()
+            .statusCode(201);
+    }
+
+    @Test
+    public void MissingEmail() {
+        Map<String, Object> requestBody = Map.of(
+            "name", "John Doe",
+            "password", "SecurePass@123"
+        );
+        given()
+            .contentType(ContentType.JSON)
+            .body(requestBody)
+        .when()
+            .post("/users/register")
+        .then()
+            .statusCode(400);
+    }
 }
 ```
 
@@ -162,16 +295,17 @@ src/main/resources/
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Language | Java 17 |
-| Framework | Spring Boot 3.3.5 |
-| AI Model | NVIDIA llama3-8b-instruct |
-| HTTP Client | Spring RestTemplate |
-| JSON Processing | Jackson ObjectMapper |
-| Test Framework | JUnit 5 + RestAssured 5.4 |
-| Build Tool | Maven |
-| Frontend | HTML + CSS + Vanilla JS (single file) |
+| Layer | Technology                                                                                                       |
+|---|------------------------------------------------------------------------------------------------------------------|
+| Language | Java 17                                                                                                          |
+| Framework | Spring Boot 3.3.5                                                                                                |
+| AI Runtime | NVIDIA API - meta/llama3-8b-instruct                                                                             |
+| HTTP Client | Spring RestTemplate                                                                                              |
+| JSON Processing | Jackson ObjectMapper                                                                                             |
+| Test Framework | JUnit 5 + RestAssured 5.4                                                                                        |
+| Build Tool | Maven                                                                                                            |
+| Frontend | HTML + CSS + Vanilla JS (single file)                                                                            |
+| AI Dev Tools | Claude (Anthropic) - architecture, code generation, prompt engineering, ChatGPT (OpenAI) - ideation and research |
 
 ---
 
@@ -181,7 +315,7 @@ src/main/resources/
 
 - Java 17+
 - Maven
-- IntelliJ IDEA (recommended)
+- IntelliJ IDEA
 - NVIDIA API key — get one free at [build.nvidia.com](https://build.nvidia.com)
 
 ### 1. Clone the repository
@@ -203,8 +337,6 @@ Or set it directly in your IDE's run configuration as an environment variable:
 ```
 NVIDIA_API_KEY=your_nvidia_api_key_here
 ```
-
-> ⚠️ Never commit your API key. The `.env` file is already in `.gitignore`.
 
 ### 3. Run the application
 
@@ -315,13 +447,13 @@ On error:
 
 ## Key Design Decisions
 
-**Retry logic** — `TestCaseService` retries the AI call up to 2 times if the response cannot be parsed as valid JSON, handling AI model inconsistencies gracefully.
+**Retry logic** - `TestCaseService` retries the AI call up to 2 times if the response cannot be parsed as valid JSON, handling AI model inconsistencies gracefully.
 
-**Prompt engineering** — prompts are strictly structured to return only JSON with no markdown, enforcing single array output, minimum test counts, and realistic values to ensure parseable, high-quality responses every time.
+**Prompt engineering** - prompts are strictly structured to return only JSON with no markdown, enforcing single array output, minimum test counts, and realistic values to ensure parseable, high-quality responses every time.
 
-**Configurable output path** — the path where generated `.java` files are saved is externalized to `application.properties` via `test.output.path`, making it easy to change without touching code.
+**Configurable output path** - the path where generated `.java` files are saved is externalized to `application.properties` via `test.output.path`, making it easy to change without touching code.
 
-**Centralized error handling** — `GlobalExceptionHandler` catches all exceptions across the app and returns clean, structured error responses instead of Spring's default stack trace output.
+**Centralized error handling** - `GlobalExceptionHandler` catches all exceptions across the app and returns clean, structured error responses instead of Spring's default stack trace output.
 
 ---
 
@@ -329,7 +461,7 @@ On error:
 
 | Variable | Description | Required |
 |---|---|---|
-| `NVIDIA_API_KEY` | Your NVIDIA API key from build.nvidia.com | Yes |
+| `NVIDIA_API_KEY` | NVIDIA API key from build.nvidia.com | Yes |
 
 ---
 
@@ -347,11 +479,11 @@ test.output.path=src/test/java/generated
 
 ## What This Project Demonstrates
 
-- **API testing expertise** — deep understanding of test case design, coverage types, and QA best practices
-- **AI integration** — calling and parsing responses from a real LLM API with prompt engineering
-- **Java backend development** — Spring Boot, REST APIs, service layers, dependency injection
-- **Developer tooling mindset** — building tools that solve real problems for other engineers
-- **Production thinking** — error handling, input validation, configurable settings, clean architecture
+- **API testing expertise** - deep understanding of test case design, coverage types, and QA best practices
+- **AI integration** - calling and parsing responses from a real LLM API with prompt engineering
+- **Backend development** - Spring Boot, REST APIs, service layers, dependency injection
+- **Developer tooling mindset** - building tools that solve real problems for other engineers
+- **Production thinking** - error handling, input validation, configurable settings, clean architecture
 
 ---
 
@@ -362,7 +494,3 @@ test.output.path=src/test/java/generated
 [![GitHub](https://img.shields.io/badge/GitHub-SakshiKhandare-181717?style=flat-square&logo=github)](https://github.com/SakshiKhandare)
 
 ---
-
-## License
-
-This project is licensed under the MIT License.
