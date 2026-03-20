@@ -9,6 +9,12 @@
 
 ---
 
+![AI QA Assistant UI](src/main/resources/static/assets/AI_QA_Assistant.png)
+
+![Demo](src/main/resources/static/assets/demo.gif)
+
+---
+
 ## What This Project Does
 
 We QA engineers spend hours writing test cases, generating test data, and analyzing failures manually. This tool automates those tasks using AI - giving us engineers instant, comprehensive coverage with a single API call.
