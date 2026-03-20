@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI QA Assistant</title>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --accent: #6366f1;
+      --border: #334155;
+    }
+
+    body.light {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .sidebar {
+      width: 240px;
+      background: var(--card);
+      padding: 20px;
+      border-right: 1px solid var(--border);
+    }
+
+    .sidebar h2 {
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .nav-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    textarea, input {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .result {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 14px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 5px 10px;
+      margin: 5px 5px 0 0;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .good { background: #16a34a; color: white; }
+    .warn { background: #f59e0b; color: white; }
+    .bad { background: #dc2626; color: white; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="sidebar">
+    <h2>AI QA Assistant</h2>
+    <div class="nav-item active" onclick="showPanel('api')">API Tests</div>
+    <div class="nav-item" onclick="showPanel('data')">Test Data</div>
+    <div class="nav-item" onclick="showPanel('code')">RestAssured</div>
+    <div class="nav-item" onclick="showPanel('review')">Test Reviewer</div>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <h2 id="title">API Test Generator</h2>
+      <button onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+
+    <!-- API TESTS -->
+    <div id="panel-api" class="card panel">
+      <input placeholder="Endpoint (e.g. /login)" id="api-endpoint"/>
+      <input placeholder="Method (GET/POST)" id="api-method"/>
+      <textarea placeholder="Schema JSON" id="api-schema"></textarea>
+      <button onclick="mockResponse('api')">Generate</button>
+      <div class="result" id="api-result"></div>
+    </div>
+
+    <!-- TEST DATA -->
+    <div id="panel-data" class="card panel" style="display:none">
+      <textarea placeholder="Schema JSON" id="data-schema"></textarea>
+      <button onclick="mockResponse('data')">Generate</button>
+      <div class="result" id="data-result"></div>
+    </div>
+
+    <!-- CODE -->
+    <div id="panel-code" class="card panel" style="display:none">
+      <input placeholder="Endpoint" id="code-endpoint"/>
+      <input placeholder="Method" id="code-method"/>
+      <textarea placeholder="Schema JSON" id="code-schema"></textarea>
+      <button onclick="mockResponse('code')">Generate Code</button>
+      <div class="result" id="code-result"></div>
+    </div>
+
+    <!-- REVIEW -->
+    <div id="panel-review" class="card panel" style="display:none">
+      <input placeholder="Framework" id="review-framework"/>
+      <input placeholder="Endpoint" id="review-endpoint"/>
+      <textarea placeholder="Paste test code here..." id="review-code"></textarea>
+      <button onclick="mockReview()">Review</button>
+
+      <div id="review-result"></div>
+    </div>
+  </div>
+
+  <script>
+    function showPanel(type) {
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.getElementById('panel-' + type).style.display = 'block';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      event.target.classList.add('active');
+      const titles = {
+        api: "API Test Generator", data: "Test Data Generator",
+        code: "RestAssured Generator", review: "AI Test Reviewer"
+      };
+      document.getElementById('title').innerText = titles[type];
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+    }
+
+    async function mockResponse(type) {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerText = 'Generating...';
+
+      try {
+        let url, body;
+
+        if (type === 'api') {
+          url = '/generate/api-tests';
+          body = {
+            endpoint: document.getElementById('api-endpoint').value,
+            method: document.getElementById('api-method').value,
+            schema: JSON.parse(document.getElementById('api-schema').value || '{}')
+          };
+        } else if (type === 'data') {
+          url = '/generate/test-data';
+          body = {
+            schema: JSON.parse(document.getElementById('data-schema').value || '{}')
+          };
+        } else if (type === 'code') {
+          url = '/generate/restassured-tests';
+          body = {
+            endpoint: document.getElementById('code-endpoint').value,
+            method: document.getElementById('code-method').value,
+            schema: JSON.parse(document.getElementById('code-schema').value || '{}')
+          };
+        }
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        document.getElementById(type + '-result').innerText = JSON.stringify(data, null, 2);
+
+      } catch(e) {
+        document.getElementById(type + '-result').innerText = 'Error: ' + e.message;
+      }
+
+      btn.disabled = false;
+      btn.innerText = type === 'code' ? 'Generate Code' : 'Generate';
+    }
+
+    async function mockReview() {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerText = 'Reviewing...';
+
+      try {
+        const res = await fetch('/review/tests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            framework: document.getElementById('review-framework').value,
+            endpoint: document.getElementById('review-endpoint').value,
+            testCode: document.getElementById('review-code').value
+          })
+        });
+
+        const data = await res.json();
+        const d = data.data;
+
+        document.getElementById('review-result').innerHTML = `
+          <div class="result">
+            <h3>Coverage Score: ${d.coverageScore} &nbsp;|&nbsp; ${d.totalTestsFound} tests found</h3>
+            <div style="margin-top:10px">
+              ${(d.missingScenarios || []).map(s => `<span class="tag bad">${s}</span>`).join('')}
+              ${(d.suggestions || []).map(s => `<span class="tag warn">${s}</span>`).join('')}
+              ${(d.goodPracticesFound || []).map(s => `<span class="tag good">${s}</span>`).join('')}
+            </div>
+            <p style="margin-top:12px">${d.overallFeedback}</p>
+          </div>`;
+
+      } catch(e) {
+        document.getElementById('review-result').innerHTML = '<p>Error: ' + e.message + '</p>';
+      }
+
+      btn.disabled = false;
+      btn.innerText = 'Review';
+    }
+  </script>
+
+</body>
+</html>
